@@ -8,12 +8,12 @@ use strict;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK $nocode $soundex_nocode);
 
 @ISA       = qw(Exporter DynaLoader);
-@EXPORT    = qw(&soundex_best &soundex_noxs &soundex_xs $soundex_nocode);
+@EXPORT    = qw(&soundex $soundex_nocode);
 	
-$VERSION   = '2.12';
+$VERSION   = '2.13';
 
-$nocode = undef;
-*soundex_nocode = \$nocode;
+$nocode    = undef;
+*soundex_nocode = \$nocode;	# Alias for compatibility reasons.
 
 sub soundex_noxs
 {
@@ -35,37 +35,17 @@ sub soundex_noxs
     wantarray ? @results : $results[0];
 }
 
-sub import
 {
-    my $package = shift;
-    my($noXS, @import_args);
-    foreach (@_) {
-	if ($_ eq "noXS") {
-	    $noXS = 1;
-	} else {
-	    push(@import_args, $_);
-	}
-    }
-
-    no strict 'refs';
-    my $callers_package = caller(0);
-    *{"${callers_package}::soundex"} =
-	$noXS ? \&soundex_noxs : \&soundex_best;
-    $package->export($callers_package, @import_args);
-}
-
-{
-    local $@;
     eval { __PACKAGE__->bootstrap() };
     if (defined(&soundex_xs)) {
-	*soundex_best = \&soundex_xs;
-	push(@EXPORT, 'soundex_xs');
+	*soundex = \&soundex_xs;
     } else {
-	*soundex_best = \&soundex_noxs;
+	*soundex = \&soundex_noxs;
 	*soundex_xs = sub {
-	    use Carp;
-	    croak("The XS code for Text::Soundex was not compiled for this ".
-		  "platform.\nsoundex_xs() may therefore not be used");
+	    require Carp;
+	    Carp::croak("The XS code for Text::Soundex was not compiled for ".
+                        "this platform.\nsoundex_xs() may therefore not be ".
+			"used");
 	};
     }
 }
@@ -162,17 +142,18 @@ to soundex() will complete about 7X faster. If for whatever reason you
 care, and you want to choose which code to use, I have provided access
 to the individual calls.
 
-  # The following calls are split up by functionality.
-  ... = soundex_noxs(...);   # Always uses the 100% perl version.
-  ... = soundex_xs(...);     # Always uses the XS version. (7X faster)
-  ... = soundex_best(...);   # Use the XS version if possible, otherwise
-                             # it will revert to the 100% perl version.
+     # The following calls are split up by functionality.
 
-  # The following defines soundex() as soundex_noxs() always.
-  # By default, soundex() is equivalent to soundex_best().
-  use Text::Soundex 'noXS';
-  ... = soundex(...);
+     # Always uses the 100% perl version.
+     ... = Text::Soundex::soundex_noxs(...);   
 
+     # Always uses the XS version. (7X faster)
+     ... = Text::Soundex::soundex_xs(...);
+
+     # Use the XS version if possible, otherwise
+     # it will revert to the 100% perl version.
+     ... = Text::Soundex::soundex(...);
+   
 =head1 LIMITATIONS
 
 As the soundex algorithm was originally used a B<long> time ago in the US
