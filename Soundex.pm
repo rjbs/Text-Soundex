@@ -1,37 +1,73 @@
 package Text::Soundex;
+require 5.000;
+
+use DynaLoader;
+use Exporter;
 
 use strict;
 use vars qw($VERSION @ISA @EXPORT @EXPORT_OK $nocode $soundex_nocode);
 
-require Exporter;
-
-@ISA       = qw(Exporter);
-@EXPORT    = qw(soundex $soundex_nocode);
-@EXPORT_OK = qw();
+@ISA       = qw(Exporter DynaLoader);
+@EXPORT    = qw(&soundex_best &soundex_noxs &soundex_xs $soundex_nocode);
 	
-$VERSION   = '2.00';
+$VERSION   = '2.12';
 
 $nocode = undef;
 *soundex_nocode = \$nocode;
 
-sub soundex {
-  my @results = map {
-    my $code = uc $_;
-    my $firstchar = substr($code, 0, 1);
-    $code =~ tr/A-Z//cd;
+sub soundex_noxs
+{
+    my @results = map {
+	my $code = uc($_);
+	my $firstchar = substr($code, 0, 1);
+	$code =~ tr/A-Z//cd;
 
-    if (length $code) {
-        $code=~ tr{AEHIOUWYBFPVCGJKQSXZDTLMNR}
-                  {00000000111122222222334556}s;
-        ($code = substr($code, 1)) =~ tr/0//d;
-        substr($firstchar . $code . '000', 0, 4);
-    }
-    else {
-      $nocode;
-    }
-  } @_;
+	if (length($code)) {
+	    $code =~ tr{AEHIOUWYBFPVCGJKQSXZDTLMNR}
+                       {00000000111122222222334556}s;
+	    ($code = substr($code, 1)) =~ tr/0//d;
+	    substr($firstchar . $code . '000', 0, 4);
+	} else {
+	    $nocode;
+	}
+    } @_;
 
-  wantarray ? @results : $results[0];
+    wantarray ? @results : $results[0];
+}
+
+sub import
+{
+    my $package = shift;
+    my($noXS, @import_args);
+    foreach (@_) {
+	if ($_ eq "noXS") {
+	    $noXS = 1;
+	} else {
+	    push(@import_args, $_);
+	}
+    }
+
+    no strict 'refs';
+    my $callers_package = caller(0);
+    *{"${callers_package}::soundex"} =
+	$noXS ? \&soundex_noxs : \&soundex_best;
+    $package->export($callers_package, @import_args);
+}
+
+{
+    local $@;
+    eval { __PACKAGE__->bootstrap() };
+    if (defined(&soundex_xs)) {
+	*soundex_best = \&soundex_xs;
+	push(@EXPORT, 'soundex_xs');
+    } else {
+	*soundex_best = \&soundex_noxs;
+	*soundex_xs = sub {
+	    use Carp;
+	    croak("The XS code for Text::Soundex was not compiled for this ".
+		  "platform.\nsoundex_xs() may therefore not be used");
+	};
+    }
 }
 
 1;
@@ -39,14 +75,14 @@ sub soundex {
 __END__
 
 # Implementation of soundex algorithm as described by Knuth in volume
-# 3 of The Art of Computer Programming, with ideas stolen from Ian
-# Phillips <ian@pipex.net>.
+# 3 of The Art of Computer Programming.
 #
-# Re-coded thanks to Mark Mielke <markm@nortel.ca> who both noticed the
-# lack of speed and took the time to re-code it taking advantage of some
-# "modern" perl features.
+# Perl re-coded by Mark Mielke <markm@nortel.ca> who both noticed the lack
+# of speed and took the time to re-code it to take advantage of some "modern"
+# perl features. As well he has written XS code to implement the soundex
+# code at a speed approx. 7X faster.
 #
-# Mike Stok <mike@stok.co.uk>, 1 January 1998.
+# Mark Mielke <markm@nortel.ca>, 2 March 1998.
 #
 # Knuth's test cases are:
 #
@@ -57,19 +93,6 @@ __END__
 # Lloyd, Ladd -> L300
 # Lukasiewicz, Lissajous -> L222
 #
-# (RCS logs are lost on an old machine - historical interest only )
-#
-# $Log: soundex.pl,v $
-# Revision 1.2  1994/03/24  00:30:27  mike
-# Subtle bug (any excuse :-) spotted by Rich Pinder <rpinder@hsc.usc.edu>
-# in the way I handles leading characters which were different but had
-# the same soundex code.  This showed up comparing it with Oracle's
-# soundex output.
-#
-# Revision 1.1  1994/03/02  13:01:30  mike
-# Initial revision
-#
-###############################################################################
 
 =head1 NAME
 
@@ -130,6 +153,26 @@ so:
   $code = soundex 'Knuth';         # $code contains 'K530'
   @list = soundex qw(Lloyd Gauss); # @list contains 'L300', 'G200'
 
+=head1 UNDERNEATH THE COVERS (a word from Mark)
+
+To ease use for the user, the XS version is transparently accessible via
+soundex() when it exists for the current platform. Basically what this
+means is that if you are on a platform with XS code compiled, the call
+to soundex() will complete about 7X faster. If for whatever reason you
+care, and you want to choose which code to use, I have provided access
+to the individual calls.
+
+  # The following calls are split up by functionality.
+  ... = soundex_noxs(...);   # Always uses the 100% perl version.
+  ... = soundex_xs(...);     # Always uses the XS version. (7X faster)
+  ... = soundex_best(...);   # Use the XS version if possible, otherwise
+                             # it will revert to the 100% perl version.
+
+  # The following defines soundex() as soundex_noxs() always.
+  # By default, soundex() is equivalent to soundex_best().
+  use Text::Soundex 'noXS';
+  ... = soundex(...);
+
 =head1 LIMITATIONS
 
 As the soundex algorithm was originally used a B<long> time ago in the US
@@ -145,10 +188,12 @@ of C<H416>.
 
 This code was originally implemented by Mike Stok (C<mike@stok.co.uk>)
 as an example of unreadable perl 4 code and refined into a library.
-Mark Mielke <markm@nortel.ca> recast the code and made it much more
-speedy in 1997.
+The code is now maintained by Mark Mielke <markm@nortel.ca> who recast
+the code and made it speedy in 1997. Mark has since added the XS code to
+accomplish the encoding at a speed upwards of 7X faster. Please
+report any bugs or other to Mark Mielke <markm@nortel.ca>.
 
 Ian Phillips (C<ian@pipex.net>) and Rich Pinder (C<rpinder@hsc.usc.edu>)
-supplied ideas and spotted mistakes.
+supplied ideas and spotted mistakes for v1.x.
 
 =cut

@@ -1,128 +1,115 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl test.pl'
 
-######################### We start with some black magic to print on failure.
+# Oh yeah... i do plan on cleaning up the look-and-feel for this test
+# script. My goal in throwing the t(), and tsoundex() code in was to
+# let me be lazy. Unfortunately the code on the bottom is nasty.
+# When i have time... when i have time... :-)
+#                                                        - mark
 
-# Change 1..1 below to 1..last_test_to_print .
-# (It may become useful if the test is moved to ./t subdirectory.)
+BEGIN {
+    sub t (&);
+    sub tsoundex;
+    sub test_label;
+}
 
-BEGIN { $| = 1; print "1..15\n"; }
-END {print "not ok 1\n" unless $loaded;}
-use Text::Soundex;
-$loaded = 1;
-print "ok 1\n";
+t {
+    test_label "use Text::Soundex";
+    eval "use Text::Soundex";
+    die if $@;
+};
 
-######################### End of black magic.
-
-# Insert your test code below (better if it prints "ok 13"
-# (correspondingly "not ok 13") depending on the success of chunk 13
-# of the test code):
-
-$count = 1;
-
-# 2 .. 7
-#
 # Knuth's test cases, scalar in, scalar out
+tsoundex("Euler"       => "E460");
+tsoundex("Gauss"       => "G200");
+tsoundex("Hilbert"     => "H416");
+tsoundex("Knuth"       => "K530");
+tsoundex("Lloydi"      => "L300");
+tsoundex("Lukasiewicz" => "L222");
 
-@pairs = qw/Euler       E460
-            Gauss       G200
-            Hilbert     H416
-            Knuth       K530
-            Lloydi      L300
-            Lukasiewicz L222
-           /;
-
-while (@pairs) {
-  $count++;
-  ($in, $expected) = splice @pairs, 0, 2;
-
-  print "not " unless $expected eq soundex $in;
-  print "ok $count\n";
-}
-
-# 8 .. 9
-#
 # check default "no code" code on a bad string and undef
+tsoundex("2 + 2 = 4"   => undef);
+tsoundex(undef()       => undef);
 
-for ('2 + 2 = 4', undef) {
-  $count++;
-  print "not " if defined (soundex $_);
-  print "ok $count\n";
-}
-
-# 10 .. 11
-#
 # check list context with and without "no code"
+tsoundex([qw/Ellery Ghosh Heilbronn Kant Ladd Lissajous/],
+	 [qw/E460   G200  H416      K530 L300 L222     /]);
+tsoundex(['Mike', undef, 'Stok'],
+	 ['M200', undef, 'S320']);
 
-@pairs = ([qw/Ellery Ghosh Heilbronn Kant Ladd Lissajous/],
-          [qw/E460   G200  H416      K530 L300 L222     /],
-          ['Mike', undef, 'Stok'],
-          ['M200', undef, 'S320'],
-         );
-
-while (@pairs) {
-  $count++;
-
-  ($in, $expected) = splice @pairs, 0, 2;
-
-  @out = soundex @$in;
-
-  if (@out != @$expected) {
-    print "not ";
-  }
-  else {
-    while (@out) {
-      if (defined ($out[0]) && defined ($expected->[0]) &&
-          $out[0] ne $expected->[0]) {
-        print "not ";
-        last;
-      }
-      elsif ((defined ($out[0]) && !defined ($expected->[0])) ||
-             (!defined ($out[0]) && defined ($expected->[0]))) {
-        print "not ";
-        last;
-      }
-
-      shift @out;
-      shift @$expected;
-    }
-  }
-  print "ok $count\n";
-}
-
-# 12 .. 13
-#
-# nocode
-#
 # check the deprecated $soundex_nocode and make sure it's reflected in
 # the $Text::Soundex::nocode variable.
+{
+    my $nocodeValue = 'Z000';
+    $soundex_nocode = $nocodeValue;
 
-$nocodeValue = 'Z000';
-$soundex_nocode = $nocodeValue;
+    t {
+	test_label "setting \$soundex_nocode";
+	die if soundex(undef) ne $nocodeValue;
+    };
 
-$count++;
-print "not " unless $nocodeValue eq soundex undef;
-print "ok $count\n";
+    t {
+	test_label "\$soundex_nocode eq \$Text::Soundex::nocode";
+	die if $Text::Soundex::nocode ne $soundex_nocode;
+    };
+}
 
-$count++;
-print "not " unless $Text::Soundex::nocode eq $soundex_nocode;
-print "ok $count\n";
-
-# 14
-#
 # make sure an empty argument list returns an undefined scalar
+t {
+    test_label "empty list";
+    die if defined(soundex());
+};
 
-$count++;
-print "not " if defined (soundex ());
-print "ok $count\n";
-
-# 15
-#
 # test to detect an error in Mike Stok's original implementation, the
 # error isn't in Mark Mielke's at all but the test should be kept anyway.
-#
 # originally spotted by Rich Pinder <rpinder@hsc.usc.edu>
+tsoundex("CZARKOWSKA" => "C622");
 
-$count++;
-print "not " unless 'C622' eq soundex 'CZARKOWSKA';
-print "ok $count\n";
+exit 0;
+
+
+my $test_label;
+
+sub t (&)
+{
+    my($test_f) = @_;
+    $test_label = undef;
+    eval {&$test_f};
+    my $success = $@ ? "failed" : "ok";
+    print $test_label, '.' x (60 - length($test_label)), $success, "\n";
+}
+
+sub tsoundex
+{
+    my($string, $expected) = @_;
+    if (ref($string) eq 'ARRAY') {
+	t {
+	    $test_label = "soundex(...) eq (...)";
+	    my @codes = soundex(@$string);
+	    for ($i = 0; $i < @$string; $i++) {
+		my $success = !(defined($codes[$i])||defined($expected->[$i]));
+		if (defined($codes[$i]) && defined($expected->[$i])) {
+		    $success = ($codes[$i] eq $expected->[$i]);
+		}
+		die if !$success;
+	    }
+	};
+    } else {
+	t {
+	    my $code = soundex($string);
+	    my $success = !(defined($code) || defined($expected));
+	    if (defined($code) && defined($expected)) {
+		$success = ($code eq $expected);
+	    }
+	    $string = defined($string) ? qq{'$string'} : qq{undef};
+	    $expected = defined($expected) ? qq{'$expected'} : qq{undef};
+	    $test_label = "soundex($string) eq $expected";
+	    die if !$success;
+	};
+    }
+}
+
+sub test_label
+{
+    $test_label = $_[0];
+}

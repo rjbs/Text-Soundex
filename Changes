@@ -1,6 +1,13 @@
 Revision history for Perl extension Text::Soundex.
 
-2.00  Thu Jan  1 16:22:11 1998
+2.10  Sun Feb 15 15:29:38 EST 1998 <markm@nortel.ca>
+
+I've put in a version of my XS code and fully integrated it with the
+existing 100% perl mechanism. The change should be virtually transparent
+to the user. XS code is approx 7.5 times faster.
+                                                           - Mark Mielke
+
+2.00  Thu Jan  1 16:22:11 1998 <mike@stok.co.uk>
 
 Incorporated Mark Mielke's rewritten version of the main soundex routine 
-and mnade the test.pl file simpler.
+and made the test.pl file simpler.
