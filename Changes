@@ -1,6 +1,14 @@
 Revision history for Perl extension Text::Soundex.
 
-2.10  Sun Feb 15 15:29:38 EST 1998 <markm@nortel.ca>
+3.00  Sun Jan 26 04:08:00 EST 2003 <mark@mielke.cc>
+
+Updated documentation, simplified the Perl interface, and updated
+the XS code to be faster, and to properly work with UTF-8 strings.
+UNICODE characters outside the ASCII range (0x00 - 0x7F) are
+considered to be non-alphabetic for the purposes of the soundex
+algorithms.
+
+2.10  Sun Feb 15 15:29:38 EST 1998 <mark@mielke.cc>
 
 I've put in a version of my XS code and fully integrated it with the
 existing 100% perl mechanism. The change should be virtually transparent
@@ -11,3 +19,4 @@ to the user. XS code is approx 7.5 times faster.
 
 Incorporated Mark Mielke's rewritten version of the main soundex routine 
 and made the test.pl file simpler.
+

@@ -1,12 +1,6 @@
 # Before `make install' is performed this script should be runnable with
 # `make test'. After `make install' it should work as `perl test.pl'
 
-# Oh yeah... i do plan on cleaning up the look-and-feel for this test
-# script. My goal in throwing the t(), and tsoundex() code in was to
-# let me be lazy. Unfortunately the code on the bottom is nasty.
-# When i have time... when i have time... :-)
-#                                                        - mark
-
 BEGIN {
     sub t (&);
     sub tsoundex;
@@ -14,20 +8,20 @@ BEGIN {
 }
 
 t {
-    test_label "use Text::Soundex qw(:Default-Ruleset)";
-    eval "use Text::Soundex qw(:Default-Ruleset)";
+    test_label "use Text::Soundex 'soundex'";
+    eval "use Text::Soundex 'soundex'";
     die if $@;
 };
 
 t {
-    test_label "use Text::Soundex qw(:NARA-Ruleset)";
-    eval "use Text::Soundex qw(:NARA-Ruleset)";
+    test_label "use Text::Soundex 'soundex_nara'";
+    eval "use Text::Soundex 'soundex_nara'";
     die if $@;
 };
 
 t {
-    test_label "use Text::Soundex qw(soundex_nara)";
-    eval "use Text::Soundex qw(soundex_nara)";
+    test_label "use Text::Soundex;";
+    eval "use Text::Soundex";
     die if $@;
 };
 
