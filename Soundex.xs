@@ -17,6 +17,10 @@
 
 #define SOUNDEX_ACCURACY (4)	/* The maximum code length... (should be>=2) */
 
+#if !(PERL_REVISION >= 5 && PERL_VERSION >= 8)
+#  define utf8n_to_uvchr utf8_to_uv
+#endif
+
 static char *soundex_table =
   /*ABCDEFGHIJKLMNOPQRSTUVWXYZ*/
    "01230120022455012623010202";
@@ -24,12 +28,12 @@ static char *soundex_table =
 static SV *sv_soundex (source)
      SV *source;
 {
-  U8 *source_p;
-  U8 *source_end;
+  char *source_p;
+  char *source_end;
 
   {
     STRLEN source_len;
-    source_p = (char *) SvPV(source, source_len);
+    source_p = SvPV(source, source_len);
     source_end = &source_p[source_len];
   }
 
@@ -37,10 +41,10 @@ static SV *sv_soundex (source)
     {
       if ((*source_p & ~((UV) 0x7F)) == 0 && isalpha(*source_p))
         {
-          SV *code     = newSV(SOUNDEX_ACCURACY);
-          U8 *code_p   = SvPVX(code);
-          U8 *code_end = &code_p[SOUNDEX_ACCURACY];
-          U8  code_last;
+          SV   *code     = newSV(SOUNDEX_ACCURACY);
+          char *code_p   = SvPVX(code);
+          char *code_end = &code_p[SOUNDEX_ACCURACY];
+          char  code_last;
 
           SvCUR_set(code, SOUNDEX_ACCURACY);
           SvPOK_only(code);
@@ -49,7 +53,7 @@ static SV *sv_soundex (source)
 
           while (source_p != source_end && code_p != code_end)
             {
-              U8 c = *source_p++;
+              char c = *source_p++;
 
               if ((c & ~((UV) 0x7F)) == 0 && isalpha(c))
                 {
@@ -81,7 +85,7 @@ static SV *sv_soundex_utf8 (source)
 
   {
     STRLEN source_len;
-    source_p = (char *) SvPV(source, source_len);
+    source_p = (U8 *) SvPV(source, source_len);
     source_end = &source_p[source_len];
   }
 
@@ -93,10 +97,10 @@ static SV *sv_soundex_utf8 (source)
 
       if ((c & ~((UV) 0x7F)) == 0 && isalpha(c))
         {
-          SV *code     = newSV(SOUNDEX_ACCURACY);
-          U8 *code_p   = SvPVX(code);
-          U8 *code_end = &code_p[SOUNDEX_ACCURACY];
-          U8  code_last;
+          SV   *code     = newSV(SOUNDEX_ACCURACY);
+          char *code_p   = SvPVX(code);
+          char *code_end = &code_p[SOUNDEX_ACCURACY];
+          char  code_last;
 
           SvCUR_set(code, SOUNDEX_ACCURACY);
           SvPOK_only(code);

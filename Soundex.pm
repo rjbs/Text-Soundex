@@ -19,7 +19,7 @@ use XSLoader ();
 
 use strict;
 
-our $VERSION   = '3.01';
+our $VERSION   = '3.02';
 our @EXPORT_OK = qw(soundex soundex_unicode soundex_nara soundex_nara_unicode
                     $soundex_nocode);
 our @EXPORT    = qw(soundex $soundex_nocode);
