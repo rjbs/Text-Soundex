@@ -1,3 +1,24 @@
+Sunday, January 31, 1999
+
+This is the Text::Soundex module with shared libraries compiled for 
+MacPerl.  Shared libraries run only on PPC and CFM68K versions, not 
+non-CFM 68K versions.
+
+This was compiled with MPW and Codewarrior.  Passed all tests.  
+I have no 68K machine so I can't test the CFM68K version.  Let me 
+know of any problems.
+
+Best installed using cpan-mac, either with the CPAN shell,
+or the installme droplet.  From the CPAN shell, type:
+
+    cpan> install CNANDOR/Text-Soundex-2.13-bin-2-Mac.tgz
+
+--
+Chris Nandor          mailto:pudge@pobox.com         http://pudge.net/
+%PGPKey = ('B76E72AD', [1024, '0824090B CE73CA10  1FF77F13 8180B6B6'])
+
+#===================================
+
 Text::Soundex Version 2.12
 
 This is a perl 5 module implementing the Soundex algorithm described by 
