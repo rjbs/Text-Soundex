@@ -1,5 +1,15 @@
 Revision history for Perl extension Text::Soundex.
 
+3.01  Sun Jan 26 16:30:00 EST 2003 <mark@mielke.cc>
+
+A bug with non-UTF 8 strings that contain non-ASCII alphabetic characters
+was fixed. The soundex_unicode() and soundex_nara_unicode() wrapper
+routines were included and the documentation refers the user to the
+excellent Text::Unidecode module to perform soundex encodings using
+unicode strings. The Perl versions of the routines have been further
+optimized, and correct a border case involving non-alphabetic characters
+at the beginning of the string.
+
 3.00  Sun Jan 26 04:08:00 EST 2003 <mark@mielke.cc>
 
 Updated documentation, simplified the Perl interface, and updated

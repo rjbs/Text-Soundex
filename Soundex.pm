@@ -19,8 +19,9 @@ use XSLoader ();
 
 use strict;
 
-our $VERSION   = '3.00';
-our @EXPORT_OK = qw(soundex soundex_nara $soundex_nocode);
+our $VERSION   = '3.01';
+our @EXPORT_OK = qw(soundex soundex_unicode soundex_nara soundex_nara_unicode
+                    $soundex_nocode);
 our @EXPORT    = qw(soundex $soundex_nocode);
 our @ISA       = qw(Exporter);
 
@@ -36,13 +37,13 @@ sub soundex_noxs
     # Strict implementation of Knuth's soundex algorithm.
 
     my @results = map {
-	my $code = uc($_);
-	my $firstchar = substr($code, 0, 1);
-	$code =~ tr/A-Z//cd;
+        my $code = $_;
+        $code =~ tr/AaEeHhIiOoUuWwYyBbFfPpVvCcGgJjKkQqSsXxZzDdTtLlMmNnRr//cd;
 
 	if (length($code)) {
-	    $code =~ tr[AEHIOUWYBFPVCGJKQSXZDTLMNR]
-                       [00000000111122222222334556]s;
+            my $firstchar = substr($code, 0, 1);
+	    $code =~ tr[AaEeHhIiOoUuWwYyBbFfPpVvCcGgJjKkQqSsXxZzDdTtLlMmNnRr]
+                       [0000000000000000111111112222222222222222333344555566]s;
 	    ($code = substr($code, 1)) =~ tr/0//d;
 	    substr($firstchar . $code . '000', 0, 4);
 	} else {
@@ -63,12 +64,12 @@ sub soundex_nara
 
     my @results = map {
 	my $code = uc($_);
-	my $firstchar = substr($code, 0, 1);
-	$code =~ tr/A-Z//cd;
+        $code =~ tr/AaEeHhIiOoUuWwYyBbFfPpVvCcGgJjKkQqSsXxZzDdTtLlMmNnRr//cd;
 
 	if (length($code)) {
-	    $code =~ tr[AEHIOUWYBFPVCGJKQSXZDTLMNR]
-                       [00900090111122222222334556]s;
+            my $firstchar = substr($code, 0, 1);
+	    $code =~ tr[AaEeHhIiOoUuWwYyBbFfPpVvCcGgJjKkQqSsXxZzDdTtLlMmNnRr]
+                       [0000990000009900111111112222222222222222333344555566]s;
             $code =~ s/(.)9\1/$1/g;
 	    ($code = substr($code, 1)) =~ tr/09//d;
 	    substr($firstchar . $code . '000', 0, 4);
@@ -78,6 +79,18 @@ sub soundex_nara
     } @_;
 
     wantarray ? @results : $results[0];
+}
+
+sub soundex_unicode
+{
+    require Text::Unidecode unless defined &Text::Unidecode::unidecode;
+    soundex(Text::Unidecode::unidecode(@_));
+}
+
+sub soundex_nara_unicode
+{
+    require Text::Unidecode unless defined &Text::Unidecode::unidecode;
+    soundex_nara(Text::Unidecode::unidecode(@_));
 }
 
 eval { XSLoader::load(__PACKAGE__, $VERSION) };
@@ -188,7 +201,21 @@ so:
 
 As the soundex algorithm was originally used a B<long> time ago in the US
 it considers only the English alphabet and pronunciation. In particular,
-unicode letters may be ignored, or considered to be sound breaks.
+non-ASCII characters will be ignored. The recommended method of dealing
+with characters that have accents, or other unicode characters, is to use
+the Text::Unidecode module available from CPAN. Either use the module
+explicitly:
+
+    use Text::Soundex;
+    use Text::Unidecode;
+
+    print soundex(unidecode("Fran\xE7ais")), "\n"; # Prints "F652\n"
+
+Or use the convenient wrapper routine:
+
+    use Text::Soundex 'soundex_unicode';
+
+    print soundex_unicode("Fran\xE7ais"), "\n";    # Prints "F652\n"
 
 Since the soundex algorithm maps a large space (strings of arbitrary
 length) onto a small space (single letter plus 3 digits) no inference

@@ -35,7 +35,7 @@ static SV *sv_soundex (source)
 
   while (source_p != source_end)
     {
-      if (isalpha(*source_p))
+      if ((*source_p & ~((UV) 0x7F)) == 0 && isalpha(*source_p))
         {
           SV *code     = newSV(SOUNDEX_ACCURACY);
           U8 *code_p   = SvPVX(code);
@@ -51,7 +51,7 @@ static SV *sv_soundex (source)
             {
               U8 c = *source_p++;
 
-              if (isalpha(c))
+              if ((c & ~((UV) 0x7F)) == 0 && isalpha(c))
                 {
                   *code_p = soundex_table[toupper(c) - 'A'];
                   if (*code_p != code_last && (code_last = *code_p) != '0')

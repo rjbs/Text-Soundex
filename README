@@ -1,4 +1,4 @@
-Text::Soundex Version 3.00
+Text::Soundex Version 3.01
 
 NOTE: Users of Text::Soundex Version 2.x should consult the 'History'
       section at the end of this document before installing this module.
@@ -11,7 +11,7 @@ Knuth. The algorithm is used quite often for locating a person by name
 where the actual spelling of the name is not known.
 
 This version directly supercedes the version of Text::Soundex that can be
-found in the core from perl5.005_02 and down. (This version is a drop-in
+found in the core from Perl 5.8.0 and down. (This version is a drop-in
 replacement)
 
 The algorithm used by soundex() is NOT fully compatible with the
@@ -70,10 +70,19 @@ Installation:
    make test
    make install
 
- If any of the tests report 'not ok' and you are running perl 5.004 or later
- then please contact Mark Mielke <markm@nortelnetworks.com>
+ If any of the tests report 'not ok' and you are running perl 5.6.0 or later
+ then please contact Mark Mielke <mark@mielke.cc>
 
 History:
+
+ Version 3.01:
+     A bug with non-UTF 8 strings that contain non-ASCII alphabetic characters
+     was fixed. The soundex_unicode() and soundex_nara_unicode() wrapper
+     routines were included and the documentation refers the user to the
+     excellent Text::Unidecode module to perform soundex encodings using
+     unicode strings. The Perl versions of the routines have been further
+     optimized, and correct a border case involving non-alphabetic characters
+     at the beginning of the string.
 
  Version 3.00:
      Support for UTF-8 strings (unicode strings) is now in place. Note
@@ -139,7 +148,7 @@ History:
 
  Version 1.00:
      This version can be found in the perl core distribution from at
-     least perl5.005_02 and down. It was written by Mike Stok. It can be
+     least Perl 5.8.0 and down. It was written by Mike Stok. It can be
      identified by the fact that it does not contain a $VERSION
      in the beginning of the module, and as well it uses an RCS
      tag with a version of 1.x. This version, before some perl5'ish
