@@ -1,0 +1,6 @@
+Revision history for Perl extension Text::Soundex.
+
+2.00  Thu Jan  1 16:22:11 1998
+
+Incorporated Mark Mielke's rewritten version of the main soundex routine 
+and mnade the test.pl file simpler.

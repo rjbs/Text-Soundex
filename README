@@ -1,0 +1,21 @@
+Text::Soundex Version 2.00
+
+This is a perl 5 module implementing the Soundex algorithm described by 
+Knuth.  Mark Mielke suggested a complete rewrite of the code for version
+2.00, Mike Stok's old code has been retired :-)
+
+Once the archive has been unpacked then the following steps are needed
+to build, test and install the module (to be done in the directory which
+contains the Makefile.PL)
+
+  perl Makefile.PL
+  make
+  make test
+
+If the make test succeeds then the next step may need to be run as root
+(on a Unix-like system) or with special privileges on other systems.
+
+  make install
+
+If any of the tests report 'not ok' and you're running perl 5.004 or later
+then please contact Mike Stok <mike@stok.co.uk>
