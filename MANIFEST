@@ -3,5 +3,5 @@ MANIFEST
 Makefile.PL
 README
 Soundex.pm
-optional/Soundex.xs
+Soundex.xs
 test.pl

@@ -1,19 +1,71 @@
+# -*- perl -*-
+
+# (c) Copyright 1998, 1999 by Mark Mielke
+#
+# Freedom to use these sources for whatever you want, as long as credit
+# is given where credit is due, is hereby granted. You may make modifications
+# where you see fit but leave this copyright somewhere visible. As well try
+# to initial any changes you make so that if I like the changes I can
+# incorporate them into any later versions of mine.
+#
+#      - Mark Mielke <markm@nortelnetworks.com>
+#
+
 package Text::Soundex;
 require 5.000;
 
 use DynaLoader;
-use Exporter;
 
 use strict;
-use vars qw($VERSION @ISA @EXPORT @EXPORT_OK $nocode $soundex_nocode);
+use vars qw($VERSION @ISA $nocode);
 
-@ISA       = qw(Exporter DynaLoader);
-@EXPORT    = qw(&soundex $soundex_nocode);
-	
-$VERSION   = '2.13';
+@ISA       = qw(DynaLoader);
+$VERSION   = '2.20';
 
 $nocode    = undef;
-*soundex_nocode = \$nocode;	# Alias for compatibility reasons.
+
+sub import
+{
+    my $class   = shift;
+    my $caller  = scalar(caller);
+    my $soundex = \&soundex;
+    my $soundex_nara;
+
+    for (@_) {
+        if (/^:(\S+)-Ruleset$/) {
+            if ($1 eq 'Default') {
+                $soundex = \&soundex;
+                next;
+            }
+
+            if ($1 eq 'NARA') {
+                $soundex = \&soundex_nara;
+                next;
+            }
+
+            require Carp;
+            Carp::croak("Soundex ruleset '$1' was not recognized");
+        }
+
+        if ($_ eq "soundex" || $_ eq "&soundex") {
+            # Bleh... I don't want people to do this but oh well... (IGNORE)
+            next;
+        }
+
+        if ($_ eq "soundex_nara" || $_ eq "&soundex_nara") {
+            $soundex_nara = \&soundex_nara;
+            next;
+        }
+
+        require Carp;
+        Carp::croak("Import directive '$_' was not recognized");
+    }
+
+    no strict 'refs';
+    *{$caller ."::soundex"} = $soundex if defined($soundex);
+    *{$caller ."::soundex_nara"} = $soundex_nara if defined($soundex_nara);
+    *{$caller ."::soundex_nocode"} = \$nocode;
+}
 
 sub soundex_noxs
 {
@@ -35,8 +87,36 @@ sub soundex_noxs
     wantarray ? @results : $results[0];
 }
 
+sub soundex_nara_noxs
+{
+    # NARA encoding says that if their are two adjacent sounds that are
+    # identical, and are separated by only an H or a W... they should be
+    # squashed to one. This requires an additional "s///", as well as
+    # the "9" character code to represent H and W. ("9" works like "0"
+    # except it squashes indentical sounds around it into one)
+
+    my @results = map {
+	my $code = uc($_);
+	my $firstchar = substr($code, 0, 1);
+	$code =~ tr/A-Z//cd;
+
+	if (length($code)) {
+	    $code =~ tr{AEHIOUWYBFPVCGJKQSXZDTLMNR}
+                       {00900090111122222222334556}s;
+            $code =~ s/(.)9\1/$1/;
+	    ($code = substr($code, 1)) =~ tr/09//d;
+	    substr($firstchar . $code . '000', 0, 4);
+	} else {
+	    $nocode;
+	}
+    } @_;
+
+    wantarray ? @results : $results[0];
+}
+
 {
     eval { __PACKAGE__->bootstrap() };
+
     if (defined(&soundex_xs)) {
 	*soundex = \&soundex_xs;
     } else {
@@ -48,6 +128,18 @@ sub soundex_noxs
 			"used");
 	};
     }
+
+    if (defined(&soundex_nara_xs)) {
+        *soundex_nara = \&soundex_nara_xs;
+    } else {
+        *soundex_nara = \&soundex_nara_noxs;
+        *soundex_nara_xs = sub {
+	    require Carp;
+	    Carp::croak("The XS code for Text::Soundex was not compiled for ".
+                        "this platform.\nsoundex_nara_xs() may therefore not ".
+                        "be used");
+        };
+    }
 }
 
 1;
@@ -57,12 +149,7 @@ __END__
 # Implementation of soundex algorithm as described by Knuth in volume
 # 3 of The Art of Computer Programming.
 #
-# Perl re-coded by Mark Mielke <markm@nortel.ca> who both noticed the lack
-# of speed and took the time to re-code it to take advantage of some "modern"
-# perl features. As well he has written XS code to implement the soundex
-# code at a speed approx. 7X faster.
-#
-# Mark Mielke <markm@nortel.ca>, 2 March 1998.
+# Some of this documention was written by Mike Stok.
 #
 # Knuth's test cases are:
 #
@@ -82,12 +169,20 @@ Text::Soundex - Implementation of the Soundex Algorithm as Described by Knuth
 
   use Text::Soundex;
 
-  $code = soundex $string;    # get soundex code for a string
-  @codes = soundex @list;     # get list of codes for list of strings
+  $code = soundex($name);    # Get the soundex code for a name.
+  @codes = soundex(@names);  # Get the list of codes for a list of names.
 
-  # set value to be returned for strings without soundex code
+  # This is how you define what you want to be returned if your
+  # input string has no indentifiable codes within it.
 
+  # Make the change permanent.
   $Text::Soundex::nocode = 'Z000';
+
+  # Make the change temporary.
+  {
+      local $Text::Soundex::nocode = 'Z000';   # Temporary change.
+      $code = soundex($name);
+  }
 
 =head1 DESCRIPTION
 
@@ -115,6 +210,28 @@ soundex code for the corresponding argument passed to C<soundex> e.g.
   @codes = soundex qw(Mike Stok);
 
 leaves C<@codes> containing C<('M200', 'S320')>.
+
+If you wish to use C<Text::Soundex> for searching for your name in
+one of the US Censuses made publicly available, you must instruct
+the module of your intentions by doing one of the following:
+
+    # First method:
+    use Text::Soundex qw(:NARA-Ruleset);
+    $code = soundex($name);
+
+    # Second method:
+    use Text::Soundex qw(soundex_nara);
+    $code = soundex_nara($name);
+
+This is necessary, as the algorithm used by the US Censuses is slightly
+different than that defined by Knuth and others. The descrepancy can be
+shown using the name "Ashcraft":
+
+    print soundex("Ashcraft"), "\n";       # prints: A226
+    print soundex_nara("Ashcraft"), "\n";  # prints: A261
+
+Their is also a speed hit involved when using the NARA ruleset. (The
+encoding is slightly more complicated)
 
 =head1 EXAMPLES
 
@@ -169,12 +286,18 @@ of C<H416>.
 
 This code was originally implemented by Mike Stok (C<mike@stok.co.uk>)
 as an example of unreadable perl 4 code and refined into a library.
-The code is now maintained by Mark Mielke <markm@nortel.ca> who recast
-the code and made it speedy in 1997. Mark has since added the XS code to
-accomplish the encoding at a speed upwards of 7X faster. Please
-report any bugs or other to Mark Mielke <markm@nortel.ca>.
+The code is now maintained by Mark Mielke <markm@nortelnetworks.com> who
+recast the code and made it speedy in 1997. Mark has since added the XS
+code to accomplish the encoding at a speed upwards of 7X faster. Please
+report any bugs or other to Mark Mielke <markm@nortelnetworks.com>.
 
 Ian Phillips (C<ian@pipex.net>) and Rich Pinder (C<rpinder@hsc.usc.edu>)
 supplied ideas and spotted mistakes for v1.x.
+
+Dave Carlson (C<dcarlsen@csranet.com>) made the request for the NARA
+ruleset to be included. The ruleset is named "NARA", as the descrepancy
+was discovered due to the fact that it was the NARA soundex machine
+that was producing "invalid" codes in certain cases. The NARA soundex
+page can be viewed at: C<http://www.nara.gov/genealogy/soundex/soundex.html>
 
 =cut

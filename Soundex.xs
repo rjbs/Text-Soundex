@@ -37,14 +37,13 @@ static SV *sv_soundex (source)
     return SvREFCNT_inc(perl_get_sv("Text::Soundex::nocode", FALSE));
 
   {
+    SV *code = newSV(SOUNDEX_ACCURACY);
     register int code_left = (SOUNDEX_ACCURACY-1);
-    register char *code, *code_p, last_code;
-
-    New(0, code, SOUNDEX_ACCURACY + 1, char);
-    code_p = &code[0];
+    register char *codep = SvPVX(code);
+    register char last_code;
 
     /* Always count first letter as special... (and record the last_code) */
-    last_code = soundex_table[(*code_p++ = toupper(*p)) - 'A'];
+    last_code = soundex_table[(*codep++ = toupper(*p)) - 'A'];
     p++, p_left--;
 
     while (p_left && code_left)
@@ -57,26 +56,28 @@ static SV *sv_soundex (source)
 	  }
 
 	/* Save the current code... */
-	*code_p = soundex_table[toupper(*p) - 'A'];
+	*codep = soundex_table[toupper(*p) - 'A'];
 	p++, p_left--;
 
 	/* Make sure the current code isn't a duplicate... */
-	if (last_code == *code_p)
+	if (last_code == *codep)
 	  continue;
 
 	/* The sound only counts if it's not bogus... */
-	if ((last_code = *code_p) != '0')
-	  code_p++, code_left--;
+	if ((last_code = *codep) != '0')
+	  codep++, code_left--;
       }
 
     /* Pad with 0's */
     while (code_left)
-      *code_p++ = '0', code_left--;
+      *codep++ = '0', code_left--;
 
-    /* Don't forget the null... */
-    *code_p = '\0';
+    /* Finish setting up the SV... */
+    SvCUR_set(code, SOUNDEX_ACCURACY);
+    *SvEND(code) = '\0';
+    (void)SvPOK_only(code);
 
-    return newSVpv(code, SOUNDEX_ACCURACY);
+    return code;
   }
 }
 

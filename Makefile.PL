@@ -5,11 +5,43 @@
 
 use ExtUtils::MakeMaker;
 
-WriteMakefile
-    ('NAME'         => 'Text::Soundex',
-     'VERSION_FROM' => 'Soundex.pm', # finds $VERSION
-     'INSTALLDIRS'  => 'perl',
-     'NORECURS'     => 1,
-     'dist'         => { COMPRESS => "gzip -v9Nf",
-			 SUFFIX   => "gz" },
-     );
+my $useXS = 1;
+
+foreach (@ARGV) {
+    /^--use-xs$/ && do {
+	$useXS = 1;
+	next;
+    };
+
+    /^--no-xs$/ && do {
+	$useXS = 0;
+	next;
+    };
+
+    warn "WARNING: Option $_ was not recognized. (ignoring)\n";
+}
+
+my %BuildOptions;
+$BuildOptions{'NAME'}         = "Text::Soundex";
+$BuildOptions{'VERSION_FROM'} = "Soundex.pm";      # Finds $VERSION
+$BuildOptions{'INSTALLDIRS'}  = "perl";            # Install in the CORE.]
+$BuildOptions{'NORECURS'}     = 1;                 # No need to recurse.
+
+$BuildOptions{'dist'}         = {
+                                 'COMPRESS'    => "gzip -v9Nf",
+                                 'SUFFIX'      => "gz",
+                                };
+
+if ($useXS) {
+    print "The XS code will be compiled.\n" if -t STDOUT;
+    $BuildOptions{'XS'}   = {'Soundex.xs' => 'Soundex.c'};
+    $BuildOptions{'C'}    = ['Soundex.c'];
+
+} else {
+    print "The XS code will not be compiled.\n" if -t STDOUT;
+    $BuildOptions{'XS'}   = {};
+    $BuildOptions{'C'}    = [];
+
+}
+
+WriteMakefile(%BuildOptions);

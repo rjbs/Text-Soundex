@@ -1,53 +1,121 @@
-Sunday, January 31, 1999
-
-This is the Text::Soundex module with shared libraries compiled for 
-MacPerl.  Shared libraries run only on PPC and CFM68K versions, not 
-non-CFM 68K versions.
-
-This was compiled with MPW and Codewarrior.  Passed all tests.  
-I have no 68K machine so I can't test the CFM68K version.  Let me 
-know of any problems.
-
-Best installed using cpan-mac, either with the CPAN shell,
-or the installme droplet.  From the CPAN shell, type:
-
-    cpan> install CNANDOR/Text-Soundex-2.13-bin-2-Mac.tgz
-
---
-Chris Nandor          mailto:pudge@pobox.com         http://pudge.net/
-%PGPKey = ('B76E72AD', [1024, '0824090B CE73CA10  1FF77F13 8180B6B6'])
-
-#===================================
-
-Text::Soundex Version 2.12
+Text::Soundex Version 2.20
 
 This is a perl 5 module implementing the Soundex algorithm described by 
-Knuth.  Mark Mielke suggested a complete rewrite of the code for version
-2.00, Mike Stok's old code has been retired :-) Recently, Mark threw in
-his XS version that works approx. 7.5 times faster than the 100% perl
-version.
+Knuth. The algorithm is used quite often for locating a person by name
+where the actual spelling of the name is not known.
 
-Once the archive has been unpacked then the following steps are needed
-to build, test and install the module (to be done in the directory which
-contains the Makefile.PL)
+This version directly supercedes the version of Text::Soundex that can be
+found in the core from perl5.005_02 and down. (This version is a drop-in
+replacement)
 
-  perl Makefile.PL
-  make
-  make test
+The default algorithm used by this module is NOT 100% compatible with
+the algorithm used to index names for US Censuses. You must specifically
+instruct soundex that you wish it to return 100% compatible codes by
+using one of the techniques mentioned in both the man page, and the history
+section found at the end of this file. (NOTE: There is a slight speed
+penalty when using the other ruleset. The default algorithm remains the
+fastest.)
 
-If the make test succeeds then the next step may need to be run as root
-(on a Unix-like system) or with special privileges on other systems.
+Basic Usage:
 
-  make install
+ Soundex is used to do a one way transformation of a name that converts
+ the character string given as input into a set of codes representing
+ the identiable sounds those characters would likely make in the output.
 
-If you do not want to use the XS code (for whatever reason) do the following
-instead of the above:
+ For example:
 
-  perl Makefile.PL --no-xs
-  make
-  make test
-  make install
+   use Text::Soundex;
 
-If any of the tests report 'not ok' and you're running perl 5.004 or later
-then please contact Mark Mielke <markm@nortel.ca>
+   print soundex("Mark"), "\n";    # prints: M620
+   print soundex("Marc"), "\n";    # prints: M620
+
+   print soundex("Hansen"), "\n";  # prints: H525
+   print soundex("Hanson"), "\n";  # prints: H525
+   print soundex("Henson"), "\n";  # prints: H525
+
+ So normally, where you might say:
+
+   if ($name1 eq $name2) {
+       ...
+   }
+
+ You could allow for approximate matching by saying:
+
+   if (soundex($name1) eq soundex($name2)) {
+       ...
+   }
+
+Installation:
+
+ Once the archive has been unpacked then the following steps are needed
+ to build, test and install the module (to be done in the directory which
+ contains the Makefile.PL)
+
+   perl Makefile.PL
+   make
+   make test
+
+ If the make test succeeds then the next step may need to be run as root
+ (on a Unix-like system) or with special privileges on other systems.
+
+   make install
+
+ If you do not want to use the XS code (for whatever reason) do the following
+ instead of the above:
+
+   perl Makefile.PL --no-xs
+   make
+   make test
+   make install
+
+ If any of the tests report 'not ok' and you are running perl 5.004 or later
+ then please contact Mark Mielke <markm@nortelnetworks.com>
+
+
+History:
+
+ Version 1.00:
+     This version can be found in the perl core distribution from at
+     least perl5.005_02 and down was written by Mike Stok. It can be
+     identified by the fact that it does not contain a $VERSION
+     in the beginning of the module, and as well it uses an RCS
+     tag with a version of 1.x. This version, before some perl5'ish
+     packaging was introduced, was actually written for perl4.
+
+ Version 2.00:
+     This version is a full re-write of the 1.0 engine by Mark Mielke.
+     The goal was for speed... and this was achieved. There is an optional
+     XS module which can be used completely transparently by the user
+     which offers a further speed increase of a factor of more than 7.5X.
+
+ Version 2.20:
+     This version includes support for the algorithm used to index
+     the U.S. Federal Censuses. There is a slight descrepancy in the
+     definition for a soundex code which is not commonly known or
+     recognized involved similar sounding letters being seperated
+     by the characters H or W. This is defined as the NARA ruleset,
+     as this descrepency was discovered by them. (Calling it "the
+     US Census ruleset" was too unwieldy...)
+
+     NARA can be found at:
+          http://www.nara.gov/genealogy/
+
+     The algorithm requested by NARA can be found at:
+          http://home.utah-inter.net/kinsearch/Soundex.html
+
+     Ways to use it in your code:
+
+          Transparently change existing code like this:
+          =============================================
+          use Text::Soundex qw(:NARA-Ruleset);
+
+          ... soundex(...) ...
+
+                                     --
+
+          Make the change visibly distinct like this:
+          ===========================================
+          use Text::Soundex qw(soundex_nara);
+
+          ... soundex_nara(...) ...
 

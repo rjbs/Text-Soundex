@@ -14,8 +14,20 @@ BEGIN {
 }
 
 t {
-    test_label "use Text::Soundex";
-    eval "use Text::Soundex";
+    test_label "use Text::Soundex qw(:Default-Ruleset)";
+    eval "use Text::Soundex qw(:Default-Ruleset)";
+    die if $@;
+};
+
+t {
+    test_label "use Text::Soundex qw(:NARA-Ruleset)";
+    eval "use Text::Soundex qw(:NARA-Ruleset)";
+    die if $@;
+};
+
+t {
+    test_label "use Text::Soundex qw(soundex_nara)";
+    eval "use Text::Soundex qw(soundex_nara)";
     die if $@;
 };
 
@@ -34,6 +46,8 @@ tsoundex(undef()       => undef);
 # check list context with and without "no code"
 tsoundex([qw/Ellery Ghosh Heilbronn Kant Ladd Lissajous/],
 	 [qw/E460   G200  H416      K530 L300 L222     /]);
+tsoundex(['Mark', 'Mielke'],
+	 ['M620', 'M420']);
 tsoundex(['Mike', undef, 'Stok'],
 	 ['M200', undef, 'S320']);
 
@@ -76,7 +90,7 @@ sub t (&)
     $test_label = undef;
     eval {&$test_f};
     my $success = $@ ? "failed" : "ok";
-    print $test_label, '.' x (60 - length($test_label)), $success, "\n";
+    print $test_label, '.' x (60 - (length($test_label) % 80)), $success, "\n";
 }
 
 sub tsoundex
@@ -84,7 +98,9 @@ sub tsoundex
     my($string, $expected) = @_;
     if (ref($string) eq 'ARRAY') {
 	t {
-	    $test_label = "soundex(...) eq (...)";
+            my $s = scalar2string(@$string);
+            my $e = scalar2string(@$expected);
+	    $test_label = "soundex($s) eq ($e)";
 	    my @codes = soundex(@$string);
 	    for ($i = 0; $i < @$string; $i++) {
 		my $success = !(defined($codes[$i])||defined($expected->[$i]));
@@ -96,14 +112,14 @@ sub tsoundex
 	};
     } else {
 	t {
+	    my $s = scalar2string($string);
+	    my $e = scalar2string($expected);
+	    $test_label = "soundex($s) eq $e";
 	    my $code = soundex($string);
 	    my $success = !(defined($code) || defined($expected));
 	    if (defined($code) && defined($expected)) {
 		$success = ($code eq $expected);
 	    }
-	    $string = defined($string) ? qq{'$string'} : qq{undef};
-	    $expected = defined($expected) ? qq{'$expected'} : qq{undef};
-	    $test_label = "soundex($string) eq $expected";
 	    die if !$success;
 	};
     }
@@ -112,4 +128,9 @@ sub tsoundex
 sub test_label
 {
     $test_label = $_[0];
+}
+
+sub scalar2string
+{
+    join(", ", map {defined($_) ? qq{'$_'} : qq{undef}} @_);
 }
