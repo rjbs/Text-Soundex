@@ -1,0 +1,36 @@
+-----BEGIN PGP SIGNED MESSAGE-----
+
+Monday, July 20, 1998
+
+This is the Text::Soundex-2.13 module with shared libraries compiled for 
+MacPerl.  Shared libraries run only on PPC and CFM68K versions, not 
+non-CFM 68K versions.  For that, install the NOXSUB version also 
+contained in this archive.
+
+This was compiled with MPW and CodeWarrior.  Passed all tests.
+I have no 68K machine (even my Newton is RISC :) so I can't test
+the CFM68K version.  Let me know any problems.
+
+Decompress macblib.sit.hqx and install the three files in "macblib".
+Installing into your site_perl directory is best:
+
+    {MACPERL}site_perl:Text:Soundex.pm
+    {MACPERL}site_perl:MacCFM68K:auto:Text:Soundex:Soundex
+    {MACPERL}site_perl:MacPPC:auto:Text:Soundex:Soundex
+
+Also read README.
+
+-----BEGIN PGP SIGNATURE-----
+Version: PGPfreeware 5.0 for non-commercial use <http://www.pgp.com>
+Charset: noconv
+
+iQCVAwUBNbP03yhcZja3bnKtAQF5fgQAhqIrKS377Ty1uLj+BDE1a/ixkAqIt+k8
+wWAXpEeo5xaDENRlvPiScEIq9jywVQU2wsyECIiEuAhZHC71eY8mRRo6JyokF4+F
+EmV5a3pwTf6dtnQsNHewVI2E1+BIYQKEEcSkuJXfPc6a5r2Yhuw3slMDGCAkNsEC
+/DGGHgiN7xQ=
+=/8En
+-----END PGP SIGNATURE-----
+
+-- 
+Chris Nandor          mailto:pudge@pobox.com         http://pudge.net/
+%PGPKey = ('B76E72AD', [1024, '0824090B CE73CA10  1FF77F13 8180B6B6'])

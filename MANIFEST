@@ -1,7 +1,9 @@
 Changes
 MANIFEST
+MacPerl.README
 Makefile.PL
 README
 Soundex.pm
+macblib.sit.hqx
 optional/Soundex.xs
 test.pl
