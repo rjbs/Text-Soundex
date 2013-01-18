@@ -25,7 +25,7 @@ foreach (@ARGV) {
 my %BuildOptions;
 $BuildOptions{'NAME'}         = "Text::Soundex";
 $BuildOptions{'VERSION_FROM'} = "Soundex.pm";      # Finds $VERSION
-$BuildOptions{'INSTALLDIRS'}  = "perl";            # Install in the CORE.]
+$BuildOptions{'INSTALLDIRS'}  = $] > 5.011 ? 'site' : "perl"; # Install in CORE.
 $BuildOptions{'NORECURS'}     = 1;                 # No need to recurse.
 
 $BuildOptions{'dist'}         = {
