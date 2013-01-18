@@ -33,6 +33,10 @@ $BuildOptions{'dist'}         = {
                                  'SUFFIX'      => "gz",
                                 };
 
+$BuildOptions{'PREREQ_PM'}    = {
+                                 'if'          => 0,
+                                };
+
 if ($useXS) {
     print "The XS code will be compiled.\n" if -t STDOUT;
     $BuildOptions{'XS'}   = {'Soundex.xs' => 'Soundex.c'};
